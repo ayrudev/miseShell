@@ -5,4 +5,4 @@
 - [x] Workspaces
 - [x] Clock
 - [x] Volume (%)
-- [ ] Battery (%)
+- [x] Battery (%)

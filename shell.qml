@@ -5,6 +5,7 @@ import QtQuick
 import QtQuick.Effects
 import Quickshell.Hyprland
 import Quickshell.Services.Pipewire
+import Quickshell.Services.UPower
 
 Scope {
   id: root
@@ -171,25 +172,38 @@ Scope {
             text: Qt.formatDateTime(systemClock.date, "hh:mm")
             color: "#cdd6f4"
           }
-          Text {
+          Row {
             anchors.right: parent.right
             anchors.rightMargin: root.frameThickness
             anchors.verticalCenter: parent.verticalCenter
-            color: "#cdd6f4"
+            spacing: 12
 
-            text: {
-              const sink = Pipewire.defaultAudioSink;
+            Text {
+              color: "#cdd6f4"
 
-              // Wait for the output to finish connecting before reading its audio state.
-              if (!sink?.ready || !sink.audio) {
-                return "Vol —";
+              text: {
+                const sink = Pipewire.defaultAudioSink;
+
+                if (!sink?.ready || !sink.audio) {
+                  return "Vol —";
+                }
+
+                if (sink.audio.muted) {
+                  return "Muted";
+                }
+
+                return `Vol ${Math.round(sink.audio.volume * 100)}%`;
               }
+            }
 
-              if (sink.audio.muted) {
-                return "Muted";
-              }
+            Text {
+              readonly property UPowerDevice battery: UPower.displayDevice
 
-              return `Vol ${Math.round(sink.audio.volume * 100)}%`;
+              // Hide the label until UPower reports a present battery.
+              visible: battery.ready && battery.type === UPowerDeviceType.Battery && battery.isPresent
+
+              color: "#cdd6f4"
+              text: visible ? `Bat ${Math.round(battery.percentage * 100)}%` : ""
             }
           }
         }

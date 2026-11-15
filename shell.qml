@@ -4,6 +4,7 @@ import Quickshell
 import QtQuick
 import QtQuick.Effects
 import Quickshell.Hyprland
+import Quickshell.Services.Pipewire
 
 Scope {
   id: root
@@ -17,6 +18,11 @@ Scope {
   SystemClock {
     id: systemClock
     precision: SystemClock.Minutes
+  }
+
+  // Track the current output so Quickshell can read its volume and mute state.
+  PwObjectTracker {
+    objects: [Pipewire.defaultAudioSink]
   }
 
   // Reserve space for tiled windows while letting clicks pass through.
@@ -164,6 +170,27 @@ Scope {
             anchors.centerIn: parent
             text: Qt.formatDateTime(systemClock.date, "hh:mm")
             color: "#cdd6f4"
+          }
+          Text {
+            anchors.right: parent.right
+            anchors.rightMargin: root.frameThickness
+            anchors.verticalCenter: parent.verticalCenter
+            color: "#cdd6f4"
+
+            text: {
+              const sink = Pipewire.defaultAudioSink;
+
+              // Wait for the output to finish connecting before reading its audio state.
+              if (!sink?.ready || !sink.audio) {
+                return "Vol —";
+              }
+
+              if (sink.audio.muted) {
+                return "Muted";
+              }
+
+              return `Vol ${Math.round(sink.audio.volume * 100)}%`;
+            }
           }
         }
       }

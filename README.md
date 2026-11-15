@@ -2,7 +2,7 @@
 
 ## Minimum
 
-- [ ] Workspaces
-- [ ] Clock
+- [x] Workspaces
+- [x] Clock
 - [ ] Volume (%)
 - [ ] Battery (%)

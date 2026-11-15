@@ -13,6 +13,12 @@ Scope {
   readonly property int cornerRadius: 16
   readonly property color frameColor: "#1e1e2e"
 
+  // Every monitor's bar reads from this shared clock.
+  SystemClock {
+    id: systemClock
+    precision: SystemClock.Minutes
+  }
+
   // Reserve space for tiled windows while letting clicks pass through.
   component EdgeReservation: PanelWindow {
     color: "transparent"
@@ -153,6 +159,11 @@ Scope {
                 }
               }
             }
+          }
+          Text {
+            anchors.centerIn: parent
+            text: Qt.formatDateTime(systemClock.date, "hh:mm")
+            color: "#cdd6f4"
           }
         }
       }

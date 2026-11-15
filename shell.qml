@@ -3,6 +3,7 @@ pragma ComponentBehavior: Bound
 import Quickshell
 import QtQuick
 import QtQuick.Effects
+import Quickshell.Hyprland
 
 Scope {
   id: root
@@ -12,7 +13,7 @@ Scope {
   readonly property int cornerRadius: 16
   readonly property color frameColor: "#1e1e2e"
 
-  // An invisible panel that reserves space along one screen edge.
+  // Reserve space for tiled windows while letting clicks pass through.
   component EdgeReservation: PanelWindow {
     color: "transparent"
     implicitWidth: 1
@@ -28,28 +29,24 @@ Scope {
       id: monitor
       required property var modelData
 
-      // Top edge reservation
       EdgeReservation {
         screen: monitor.modelData
         anchors.top: true
         exclusiveZone: root.frameThickness
       }
 
-      // Left edge reservation
       EdgeReservation {
         screen: monitor.modelData
         anchors.left: true
         exclusiveZone: root.frameThickness
       }
 
-      // Right edge reservation
       EdgeReservation {
         screen: monitor.modelData
         anchors.right: true
         exclusiveZone: root.frameThickness
       }
 
-      // Bottom bar reservation
       EdgeReservation {
         screen: monitor.modelData
         anchors.bottom: true
@@ -68,10 +65,12 @@ Scope {
         color: "transparent"
         exclusionMode: ExclusionMode.Ignore
 
-        // The empty surface lets all pointer input through.
-        mask: Region {}
+        // Accept pointer input inside the bottom bar and pass clicks through elsewhere.
+        mask: Region {
+          item: barContent
+        }
 
-        // The opaque part of this stencil defines the opening.
+        // Define the rounded opening used by the visual mask.
         Item {
           id: opening
           anchors.fill: parent
@@ -87,7 +86,7 @@ Scope {
           }
         }
 
-        // Paint the frame, then cut the rounded opening out of it.
+        // Paint the frame and use the inverted mask to cut out the opening.
         Rectangle {
           anchors.fill: parent
           color: root.frameColor
@@ -96,6 +95,64 @@ Scope {
             maskSource: opening
             maskEnabled: true
             maskInverted: true
+          }
+        }
+
+        Item {
+          id: barContent
+
+          anchors.left: parent.left
+          anchors.right: parent.right
+          anchors.bottom: parent.bottom
+          height: root.barHeight
+
+          // Match this bar to its Hyprland monitor so the highlight is per screen.
+          readonly property HyprlandMonitor hyprMonitor: Hyprland.monitors.values.find(output => output.name === monitor.modelData.name) ?? null
+
+          Row {
+            anchors.left: parent.left
+            anchors.leftMargin: root.frameThickness
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 4
+
+            Repeater {
+              model: 5
+
+              delegate: Rectangle {
+                id: button
+
+                required property int index
+                readonly property int workspaceNumber: index + 1
+                readonly property bool selected: barContent.hyprMonitor?.activeWorkspace?.id === workspaceNumber
+
+                width: 22
+                height: barContent.height - 8
+                radius: 5
+                color: selected ? "#cba6f7" : "transparent"
+
+                Text {
+                  anchors.centerIn: parent
+                  text: button.workspaceNumber.toString()
+                  color: button.selected ? root.frameColor : "#cdd6f4"
+                }
+
+                MouseArea {
+                  anchors.fill: parent
+                  cursorShape: Qt.PointingHandCursor
+
+                  onClicked: {
+                    const number = button.workspaceNumber;
+
+                    // Switch by number so a click can open a workspace that doesn't exist yet.
+                    if (Hyprland.usingLua) {
+                      Hyprland.dispatch(`hl.dsp.focus({ workspace = "${number}" })`);
+                    } else {
+                      Hyprland.dispatch(`workspace ${number}`);
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }

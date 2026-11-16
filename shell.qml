@@ -1,9 +1,9 @@
 pragma ComponentBehavior: Bound
 
 import Quickshell
+import Quickshell.Services.Pipewire
 import QtQuick
 import QtQuick.Effects
-import Quickshell.Services.Pipewire
 
 Scope {
   id: root
